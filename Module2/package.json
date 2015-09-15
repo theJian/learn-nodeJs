@@ -1,0 +1,4 @@
+{
+	"name": "module2",
+	"main": "./lib/Main.js"
+}
