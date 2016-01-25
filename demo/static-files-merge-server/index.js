@@ -29,9 +29,10 @@ function combineFiles (pathnames, cb) {
 function main (argv) {
 	var config = JSON.parse(fs.readFileSync(argv[0], 'utf-8')),
 			root = config.root || '.',
-			port = config.port || 80;
+			port = config.port || 80,
+			server;
 
-	http.createServer(function (req, res) {
+	server = http.createServer(function (req, res) {
 		var urlInfo = parseURL(root, req.url);
 
 		validateFiles(urlInfo.pathnames, function (err, pathnames) {
@@ -46,6 +47,12 @@ function main (argv) {
 			}
 		});
 	}).listen(port);
+
+	process.on('SIGTERM', function () {
+		server.close(function () {
+			process.exit(0);
+		});
+	});
 }
 
 function parseURL(root, url) {
