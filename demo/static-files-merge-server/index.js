@@ -34,7 +34,7 @@ function main (argv) {
 	http.createServer(function (req, res) {
 		var urlInfo = parseURL(root, req.url);
 
-		combineFiles(urlInfo.pathnames, function(err, data) {
+		validateFiles(urlInfo.pathnames, function (err, pathnames) {
 			if(err) {
 				res.writeHead(404);
 				res.end(err.message);
@@ -42,7 +42,7 @@ function main (argv) {
 				res.writeHead(200, {
 					'Content-Type': urlInfo.mime
 				});
-				res.end(data);
+				outputFiles(pathnames, res);
 			}
 		});
 	}).listen(port);
@@ -62,9 +62,42 @@ function parseURL(root, url) {
 	});
 
 	return {
-		mine: MIME[path.extname(pathnames[0])] || 'text/plain',
+		mime: MIME[path.extname(pathnames[0])] || 'text/plain',
 		pathnames: pathnames
 	};
+}
+
+function outputFiles (pathnames, writer) {
+	(function next (i, len) {
+		if(i < len) {
+			var reader = fs.createReadStream(pathnames[i]);
+
+			reader.pipe(writer, {end: false});
+			reader.on('end', function () {
+				next(i + 1, len);
+			});
+		} else {
+			writer.end();
+		}
+	})(0, pathnames.length);
+}
+
+function validateFiles (pathnames, cb) {
+	(function next (i, len) {
+		if(i < len) {
+			fs.stat(pathnames[i], function (err, stats) {
+				if(err) {
+					cb(err);
+				} else if(!stats.isFile()) {
+					cb(new Error());
+				} else {
+					next(i + 1, len);
+				}
+			});
+		} else {
+			cb(null, pathnames);
+		}
+	})(0, pathnames);
 }
 
 main(process.argv.slice(2));
