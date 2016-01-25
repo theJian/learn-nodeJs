@@ -21,7 +21,7 @@ function combineFiles (pathnames, cb) {
 				}
 			});
 		} else {
-			cb(null, Buffer.concat(ouput));
+			cb(null, Buffer.concat(output));
 		}
 	})(0, pathnames.length);
 }
